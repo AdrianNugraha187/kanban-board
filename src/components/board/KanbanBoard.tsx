@@ -4,6 +4,7 @@ import type { Column, Task } from "../../types/kanban";
 import {
   DndContext,
   DragOverlay,
+  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
@@ -11,7 +12,10 @@ import {
   type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { SortableContext } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
 import { Plus, Search, X } from "lucide-react";
 import { createPortal } from "react-dom";
 import KanbanColumn from "./KanbanColumn";
@@ -35,11 +39,15 @@ export default function KanbanBoard() {
 
   const columnIds = useMemo(() => columns.map((col) => col.id), [columns]);
 
+  // 3. Daftarkan PointerSensor dan KeyboardSensor bersamaan
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 5,
       },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
 

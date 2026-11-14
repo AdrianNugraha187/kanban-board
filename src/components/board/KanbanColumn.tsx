@@ -110,7 +110,7 @@ export default function KanbanColumn({
       <header
         {...attributes}
         {...listeners}
-        className="group flex cursor-grab items-center justify-between border-b border-slate-800 p-4 active:cursor-grabbing"
+        className="group flex cursor-grab items-center justify-between border-b border-slate-800 p-4 e:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 active:cursor-grabbing"
       >
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
           {isEditingTitle ? (
@@ -120,7 +120,10 @@ export default function KanbanColumn({
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
               onBlur={handleSaveTitle}
-              onKeyDown={handleTitleKeyDown}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                handleTitleKeyDown(e);
+              }}
               onClick={(e) => e.stopPropagation()}
               className="w-full rounded border border-blue-500 bg-slate-800 px-2 py-0.5 text-sm font-semibold text-slate-100 focus:outline-none"
             />

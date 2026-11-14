@@ -97,6 +97,10 @@ export default function TaskCard({ task, isDragDisabled }: TaskCardProps) {
       style={style}
       {...attributes}
       {...listeners}
+      onDoubleClick={() => {
+        setEditContent(task.content);
+        setIsEditing(true);
+      }}
       className={`group relative flex min-h-18 items-start justify-between rounded-lg border border-slate-700 bg-slate-800 p-3 text-sm text-slate-100 shadow-sm transition-colors hover:border-blue-500  
         ${isDragDisabled ? `cursor-default` : `cursor-grab active:cursor-grabbing`} `}
     >
