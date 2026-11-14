@@ -7,8 +7,10 @@ interface KanbanState {
   columns: Column[];
   tasks: Task[];
   addColumn: (title: string) => void;
+  updateColumn: (id: Id, title: string) => void;
   deleteColumn: (id: Id) => void;
   addTask: (columnId: Id, content: string) => void;
+  updateTask: (id: Id, content: string) => void;
   deleteTask: (id: Id) => void;
   moveColumn: (activeId: Id, overId: Id) => void;
   moveTask: (activeId: Id, overId: Id, isOverColumn: boolean) => void;
@@ -42,6 +44,13 @@ export const useKanbanStore = create<KanbanState>()(
           columns: [...state.columns, { id: crypto.randomUUID(), title }],
         })),
 
+      updateColumn: (id, title) =>
+        set((state) => ({
+          columns: state.columns.map((col) =>
+            col.id === id ? { ...col, title } : col,
+          ),
+        })),
+
       deleteColumn: (id) =>
         set((state) => ({
           columns: state.columns.filter((col) => col.id !== id),
@@ -55,6 +64,11 @@ export const useKanbanStore = create<KanbanState>()(
             ...state.tasks,
             { id: crypto.randomUUID(), columnId, content },
           ],
+        })),
+
+      updateTask: (id, content) =>
+        set((state) => ({
+          tasks: state.tasks.map((t) => (t.id === id ? { ...t, content } : t)),
         })),
 
       deleteTask: (id) =>

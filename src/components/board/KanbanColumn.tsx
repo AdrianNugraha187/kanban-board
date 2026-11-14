@@ -9,13 +9,23 @@ import { Plus, Trash2 } from "lucide-react";
 interface KanbanColumnProps {
   column: Column;
   tasks: Task[];
+  isDragDisabled?: boolean;
 }
 
-export default function KanbanColumn({ column, tasks }: KanbanColumnProps) {
-  const addTask = useKanbanStore((state) => state.addTask);
-  const deleteColumn = useKanbanStore((state) => state.deleteColumn);
+export default function KanbanColumn({
+  column,
+  tasks,
+  isDragDisabled,
+}: KanbanColumnProps) {
+  const { addTask, updateColumn, deleteColumn } = useKanbanStore();
+
+  // State untuk tambah tugas
   const [isAdding, setIsAdding] = useState(false);
   const [newTaskContent, setNewTaskContent] = useState("");
+
+  // State untuk inline edit judul kolom
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editTitle, setEditTitle] = useState(column.title);
 
   const taskIds = useMemo(() => tasks.map((t) => t.id), [tasks]);
   const {
@@ -31,12 +41,32 @@ export default function KanbanColumn({ column, tasks }: KanbanColumnProps) {
       type: "Column",
       column,
     },
+    disabled: isEditingTitle,
   });
 
   const style = {
     transition,
     transform: CSS.Transform.toString(transform),
   };
+
+  function handleSaveTitle() {
+    const trimmed = editTitle.trim();
+    if (trimmed && trimmed !== column.title) {
+      updateColumn(column.id, trimmed);
+    } else {
+      setIsEditingTitle(false);
+    }
+  }
+
+  function handleTitleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSaveTitle();
+    } else if (event.key === "Escape") {
+      setEditTitle(column.title);
+      setIsEditingTitle(false);
+    }
+  }
 
   function handleAddTask(e: React.FormEvent) {
     e.preventDefault();
@@ -50,7 +80,7 @@ export default function KanbanColumn({ column, tasks }: KanbanColumnProps) {
       <div
         ref={setNodeRef}
         style={style}
-        className="flex h-[520px] w-80 shrink-0 flex-col rounded-xl border-2 border-dashed border-blue-500 bg-slate-900/40"
+        className="flex h-130 w-80 shrink-0 flex-col rounded-xl border-2 border-dashed border-blue-500 bg-slate-900/40"
       />
     );
   }
@@ -74,7 +104,7 @@ export default function KanbanColumn({ column, tasks }: KanbanColumnProps) {
     <div
       ref={setNodeRef}
       style={style}
-      className="flex h-[520px] w-80 shrink-0 flex-col rounded-xl border border-slate-800 bg-slate-900 shadow-md"
+      className="flex h-130 w-80 shrink-0 flex-col rounded-xl border border-slate-800 bg-slate-900 shadow-md"
     >
       {/* Header Kolom: Tambahkan class 'group' dan masukkan tombol hapus ke dalam header */}
       <header
@@ -82,8 +112,31 @@ export default function KanbanColumn({ column, tasks }: KanbanColumnProps) {
         {...listeners}
         className="group flex cursor-grab items-center justify-between border-b border-slate-800 p-4 active:cursor-grabbing"
       >
-        <div className="flex items-center gap-2.5">
-          <h3 className="font-semibold text-slate-100">{column.title}</h3>
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          {isEditingTitle ? (
+            <input
+              autoFocus
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onBlur={handleSaveTitle}
+              onKeyDown={handleTitleKeyDown}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full rounded border border-blue-500 bg-slate-800 px-2 py-0.5 text-sm font-semibold text-slate-100 focus:outline-none"
+            />
+          ) : (
+            <h3
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditTitle(column.title);
+                setIsEditingTitle(true);
+              }}
+              title="Klik untuk mengganti nama kolom"
+              className="cursor-text truncate rounded px-1 py-0.5 font-semibold text-slate-100 hover:bg-slate-800"
+            >
+              {column.title}
+            </h3>
+          )}
           <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-slate-400">
             {tasks.length}
           </span>
@@ -98,16 +151,25 @@ export default function KanbanColumn({ column, tasks }: KanbanColumnProps) {
           <Trash2 className="h-4 w-4" />
         </button>
       </header>
-
+      {/* Pada bagian render daftar kartu tugas: */}
       {/* Daftar Kartu Tugas */}
       <section className="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
         <SortableContext items={taskIds}>
           {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} />
+            <TaskCard
+              key={task.id}
+              isDragDisabled={isDragDisabled}
+              task={task}
+            />
           ))}
         </SortableContext>
-      </section>
 
+        {tasks.length === 0 && isDragDisabled && (
+          <p className="py-8 text-center text-xs text-slate-500">
+            Tidak ada tugas yang ditemukan
+          </p>
+        )}
+      </section>
       {/* Footer: Form / Tombol Tambah Tugas */}
       <footer className="border-t border-slate-800 p-3">
         {isAdding ? (
