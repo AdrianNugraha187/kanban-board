@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useKanbanStore } from "../../store/useKanbanStore";
 import type { Column, Task } from "../../types/kanban";
 import {
@@ -20,6 +20,7 @@ import { Plus, Search, X } from "lucide-react";
 import { createPortal } from "react-dom";
 import KanbanColumn from "./KanbanColumn";
 import TaskCard from "./TaskCard";
+import Modal from "../ui/Modal";
 
 export default function KanbanBoard() {
   const { columns, tasks, addColumn, moveColumn, moveTask } = useKanbanStore();
@@ -27,6 +28,8 @@ export default function KanbanBoard() {
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isAddColumnOpen, setIsAddColumnOpen] = useState(false);
+  const [newColumnTitle, setNewColumnTitle] = useState("");
 
   const isFiltering = searchQuery.trim().length > 0;
 
@@ -103,13 +106,13 @@ export default function KanbanBoard() {
     }
   }
 
-  function handleCreateColumn() {
-    const title = window.prompt("Masukkan nama kolom baru");
-
-    if (title?.trim()) {
-      addColumn(title.trim());
-    }
-  }
+  const handleAddColumnSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!newColumnTitle.trim()) return;
+    addColumn(newColumnTitle.trim());
+    setNewColumnTitle("");
+    setIsAddColumnOpen(false);
+  };
   return (
     <div className="flex min-h-screen w-full items-start overflow-x-auto bg-slate-950 p-8">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 bg-slate-900/60 px-8 py-4">
@@ -169,12 +172,65 @@ export default function KanbanBoard() {
 
             <button
               type="button"
-              onClick={handleCreateColumn}
+              onClick={() => setIsAddColumnOpen(true)}
               className="flex h-14 w-80 shrink-0 items-center justify-center gap-2 rounded-xl border border-dashed border-slate-700 bg-slate-900/50 text-sm font-medium text-slate-400 transition-colors hover:border-blue-500 hover:text-slate-100"
             >
               <Plus className="h-5 w-5" />
               Tambah Kolom
             </button>
+
+            {/* Modal Tambah Kolom */}
+            <Modal
+              isOpen={isAddColumnOpen}
+              onClose={() => {
+                setIsAddColumnOpen(false);
+                setNewColumnTitle("");
+              }}
+              title="Tambah Kolom Baru"
+            >
+              <form
+                onSubmit={handleAddColumnSubmit}
+                className="flex flex-col gap-4"
+              >
+                <div>
+                  <label
+                    htmlFor="column-title"
+                    className="mb-1.5 block text-sm font-medium text-slate-300"
+                  >
+                    Nama Kolom
+                  </label>
+                  <input
+                    id="column-title"
+                    autoFocus
+                    type="text"
+                    value={newColumnTitle}
+                    onChange={(e) => setNewColumnTitle(e.target.value)}
+                    placeholder="Contoh: Review, QA, Backlog..."
+                    className="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 placeholder-slate-400 focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddColumnOpen(false);
+                      setNewColumnTitle("");
+                    }}
+                    className="rounded-lg px-4 py-2 text-sm font-medium text-slate-400 transition-colors hover:bg-slate-800 hover:text-slate-100"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!newColumnTitle.trim()}
+                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Buat Kolom
+                  </button>
+                </div>
+              </form>
+            </Modal>
 
             {/* Portal agar elemen yang ditarik tidak terpotong container overflow */}
             {createPortal(
